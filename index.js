@@ -5,15 +5,23 @@ const link = `https://zakupki.gov.ru/epz/order/extendedsearch/results.html?searc
 
 const fs = require('fs');
 let savedData = [];
+let i = 1;
 
 osmosis
     .get(link)
-    .find('.search-registry-entrys-block')
-    .set({ related: ['.registry-entry__form'] })
+    .paginate('.paginator .pages > a[href]', 5)
+    .find('.search-registry-entry-block')
+    .set({ 
+        orderID: '.registry-entry__header-mid__number a',
+        link: '.registry-entry__header-mid__number a @href' 
+    })
     .data(function (data) {
+        data.id = i++;
         console.log(data);
         savedData.push(data);
     })
+    .log(console.log) // включить логи
+    .error(console.error) // на случай нахождения ошибки
     .done(function () {
         fs.writeFile('data.json', JSON.stringify(savedData, null, 4), function (err) {
             if (err) console.error(err);
@@ -21,10 +29,3 @@ osmosis
         });
     });
 
-// osmosis
-//     .get('https://www.google.co.in/search?q=analytics')
-//     .find('#botstuff')
-//     .set({ related: ['.card-section .brs_col p a'] })
-//     .data(function (data) {
-//         console.log(data);
-//     });
