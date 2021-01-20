@@ -10,6 +10,8 @@
     "author": "g1rz",
     "license": "ISC",
     "dependencies": {
-        "osmosis": "^1.1.10"
+        "cheerio": "^1.0.0-rc.5",
+        "osmosis": "^1.1.10",
+        "request": "^2.88.2"
     }
 }

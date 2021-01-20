@@ -1,7 +1,7 @@
 const osmosis = require('osmosis');
 
 let inn = 3808229774;
-const link = `https://zakupki.gov.ru/epz/order/extendedsearch/results.html?searchString=${inn}&morphology=on`;
+const link = `https://zakupki.gov.ru/epz/order/extendedsearch/results.html?searchString=${inn}&morphology=on&recordsPerPage=_50`;
 
 const fs = require('fs');
 
@@ -12,19 +12,27 @@ let getFirstPageData = function(path) {
         let i = 1;
         osmosis
             .get(path)
+            .find('.pages')
+            .set({
+                countPages: 'li:last-of-type',
+            })
             .find('.search-registry-entry-block')
             .set({
                 orderID: '.registry-entry__header-mid__number a',
                 link: '.registry-entry__header-mid__number a @href',
+                status: '.registry-entry__header-mid__title',
+                object: '.registry-entry__body-value',
+                owner: '.registry-entry__body-href a',
+                price: '.price-block__value',
+                dateStart: '.data-block > .row .col-6:first-child .data-block__value',
+                dateUpdate: '.data-block > .row .col-6:last-child .data-block__value',
+                dateEnd: '.data-block > .data-block__value',
             })
             .data(function (data) {
                 data.id = i++;
                 savedData.push(data);
             })
-            .find('.pages')
-            .set({
-                countPages: 'li:last-of-type',
-            })
+            
             .data(function (data) {
                 countPages = data.countPages;
             })
@@ -40,15 +48,22 @@ let getFirstPageData = function(path) {
 let getDataFromPage = function(path, page) {
     return new Promise((resolve) => {
         let savedData = [];
-        let i = (page - 1) * 10 + 1;
+        let i = (page - 1) * 50 + 1;
         let link = path + '&pageNumber=' + page;
         osmosis
             .get(link)
-            .delay(2000)
+            .delay(4000)
             .find('.search-registry-entry-block')
             .set({
                 orderID: '.registry-entry__header-mid__number a',
                 link: '.registry-entry__header-mid__number a @href',
+                status: '.registry-entry__header-mid__title',
+                object: '.registry-entry__body-value',
+                owner: '.registry-entry__body-href a',
+                price: '.price-block__value',
+                dateStart: '.data-block > .row .col-6:first-child .data-block__value',
+                dateUpdate: '.data-block > .row .col-6:last-child .data-block__value',
+                dateEnd: '.data-block > .data-block__value',
             })
             .data(function (data) {
                 data.id = i++;
@@ -75,9 +90,7 @@ getFirstPageData(link).then((data) => {
 
         responses.map(response => {
             orders = [...orders, ...response]
-            // orders.push(response)
         })
-        // console.log(orders);
         fs.writeFile('data.json', JSON.stringify(orders, null, 4), function (err) {
             if (err) console.error(err);
             else console.log('Data Saved to data.json file');
@@ -87,16 +100,3 @@ getFirstPageData(link).then((data) => {
 
     
 });
-
-// getDataFromPage(link, 3).then((data) => {
-//     fs.writeFile('data.json', JSON.stringify(data, null, 4), function (err) {
-//         if (err) console.error(err);
-//         else console.log('Data Saved to data.json file');
-//     });
-//     console.log(data);
-// });
-
-
-
-
-
