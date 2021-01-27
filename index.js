@@ -1,7 +1,8 @@
 const osmosis = require('osmosis');
 
 let inn = 3808229774;
-const link = `https://zakupki.gov.ru/epz/order/extendedsearch/results.html?searchString=${inn}&morphology=on&recordsPerPage=_50`;
+let inn2 = 1435193127;
+const link = `https://zakupki.gov.ru/epz/order/extendedsearch/results.html?searchString=${inn}&morphology=on&recordsPerPage=50`;
 
 const fs = require('fs');
 
@@ -12,6 +13,7 @@ let getFirstPageData = function(path) {
         let i = 1;
         osmosis
             .get(path)
+            .delay(10000)
             .find('.pages')
             .set({
                 countPages: 'li:last-of-type',
@@ -52,7 +54,7 @@ let getDataFromPage = function(path, page) {
         let link = path + '&pageNumber=' + page;
         osmosis
             .get(link)
-            .delay(4000)
+            .delay(5000)
             .find('.search-registry-entry-block')
             .set({
                 orderID: '.registry-entry__header-mid__number a',
@@ -77,26 +79,38 @@ let getDataFromPage = function(path, page) {
     });
 }
 
-getFirstPageData(link).then((data) => {
+getFirstPageData(link)
+    .then((data) => {
 
-    let orders = [...data.data];
-    let requests = [];
+        return new Promise(resolve => {
+            let orders = [...data.data];
 
-    for (let i = 2; i <= data.countPages; i++) {
-        requests.push(getDataFromPage(link, i));
-    }
-
-    Promise.all(requests).then(responses => {
-
-        responses.map(response => {
-            orders = [...orders, ...response]
-        })
-        fs.writeFile('data.json', JSON.stringify(orders, null, 4), function (err) {
-            if (err) console.error(err);
-            else console.log('Data Saved to data.json file');
+            if (data.countPages > 1) {
+                let requests = [];
+            
+                for (let i = 2; i <= data.countPages; i++) {
+                    requests.push(getDataFromPage(link, i));
+                }
+            
+                Promise.all(requests).then(responses => {
+            
+                    responses.map(response => {
+                        orders = [...orders, ...response]
+                    })
+                    resolve(orders);
+                    // fs.writeFile('data.json', JSON.stringify(orders, null, 4), function (err) {
+                    //     if (err) console.error(err);
+                    //     else console.log('Data Saved to data.json file');
+                    // });
+                    // console.log('Количество записей: ' + orders.length);
+                })
+            } else {
+                resolve(orders);
+            }
+            
         });
-        console.log('Количество записей: ' + orders.length);
-    })
 
-    
-});
+    })
+    .then(data => {
+        console.log('Количество записей: ' + data.length);
+    })
