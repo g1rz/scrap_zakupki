@@ -2,7 +2,7 @@ const osmosis = require('osmosis');
 
 let inn = 3808229774;
 let inn2 = 1435193127;
-const link = `https://zakupki.gov.ru/epz/order/extendedsearch/results.html?searchString=${inn}&morphology=on&recordsPerPage=50`;
+const link = `https://zakupki.gov.ru/epz/order/extendedsearch/results.html?searchString=${inn2}&morphology=on&recordsPerPage=50&af=on`;
 
 const fs = require('fs');
 
@@ -98,10 +98,10 @@ getFirstPageData(link)
                         orders = [...orders, ...response]
                     })
                     resolve(orders);
-                    // fs.writeFile('data.json', JSON.stringify(orders, null, 4), function (err) {
-                    //     if (err) console.error(err);
-                    //     else console.log('Data Saved to data.json file');
-                    // });
+                    fs.writeFile('data.json', JSON.stringify(orders, null, 4), function (err) {
+                        if (err) console.error(err);
+                        else console.log('Data Saved to data.json file');
+                    });
                     // console.log('Количество записей: ' + orders.length);
                 })
             } else {
