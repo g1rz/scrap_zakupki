@@ -2,7 +2,7 @@ const osmosis = require('osmosis');
 
 let inn = 3808229774;
 let inn2 = 1435193127;
-const link = `https://zakupki.gov.ru/epz/order/extendedsearch/results.html?searchString=${inn2}&morphology=on&recordsPerPage=50&af=on`;
+const link = `https://zakupki.gov.ru/epz/order/extendedsearch/results.html?searchString=${inn2}&morphology=on&recordsPerPage=5&af=on`;
 
 const fs = require('fs');
 
@@ -10,14 +10,11 @@ let getFirstPageData = function(path) {
     return  new Promise((resolve) => {
         let savedData = [];
         let countPages = 0;
+        let totalCount = '';
         let i = 1;
         osmosis
             .get(path)
-            .delay(10000)
-            .find('.pages')
-            .set({
-                countPages: 'li:last-of-type',
-            })
+            .delay(5000)
             .find('.search-registry-entry-block')
             .set({
                 orderID: '.registry-entry__header-mid__number a',
@@ -33,15 +30,23 @@ let getFirstPageData = function(path) {
             .data(function (data) {
                 data.id = i++;
                 savedData.push(data);
+               
+            })
+            .find('.content-search-registry-block')
+            .set({
+                countPages: '.pages li:last-of-type',
+                totalCount: '.search-results__total'
+            })
+            .data(function (data) {
+
+                countPages = data.countPages;
+                totalCount = data.totalCount;
             })
             
-            .data(function (data) {
-                countPages = data.countPages;
-            })
             .log(console.log) // включить логи
             .error(console.error) // на случай нахождения ошибки
             .done(function () {
-                resolve({data: savedData, countPages: countPages});
+                resolve({data: savedData, countPages: countPages, totalCount: totalCount});
     
             });
     });
@@ -98,11 +103,9 @@ getFirstPageData(link)
                         orders = [...orders, ...response]
                     })
                     resolve(orders);
-                    fs.writeFile('data.json', JSON.stringify(orders, null, 4), function (err) {
-                        if (err) console.error(err);
-                        else console.log('Data Saved to data.json file');
-                    });
-                    // console.log('Количество записей: ' + orders.length);
+                   
+                   
+                    
                 })
             } else {
                 resolve(orders);
@@ -112,5 +115,11 @@ getFirstPageData(link)
 
     })
     .then(data => {
+        // fs.writeFile('data.json', JSON.stringify(orders, null, 4), function (err) {
+        //     if (err) console.error(err);
+        //     else console.log('Data Saved to data.json file');
+        // });
+        console.log(data);
         console.log('Количество записей: ' + data.length);
+        console.log(data.totalCount);
     })
