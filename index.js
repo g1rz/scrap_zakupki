@@ -2,11 +2,13 @@ const osmosis = require('osmosis');
 
 let inn = 3808229774;
 let inn2 = 1435193127;
-const link = `https://zakupki.gov.ru/epz/order/extendedsearch/results.html?searchString=${inn2}&morphology=on&recordsPerPage=5&af=on`;
+
 
 const fs = require('fs');
 
-let getFirstPageData = function(path) {
+
+
+const getFirstPageData = async (path, inn) =>  {
     return  new Promise((resolve) => {
         let savedData = [];
         let countPages = 0;
@@ -22,6 +24,7 @@ let getFirstPageData = function(path) {
                 status: '.registry-entry__header-mid__title',
                 object: '.registry-entry__body-value',
                 owner: '.registry-entry__body-href a',
+                ownerLink: '.registry-entry__body-href a @href',
                 price: '.price-block__value',
                 dateStart: '.data-block > .row .col-6:first-child .data-block__value',
                 dateUpdate: '.data-block > .row .col-6:last-child .data-block__value',
@@ -29,8 +32,8 @@ let getFirstPageData = function(path) {
             })
             .data(function (data) {
                 data.id = i++;
+                data.inn = inn;
                 savedData.push(data);
-               
             })
             .find('.content-search-registry-block')
             .set({
@@ -38,21 +41,18 @@ let getFirstPageData = function(path) {
                 totalCount: '.search-results__total'
             })
             .data(function (data) {
-
                 countPages = data.countPages;
                 totalCount = data.totalCount;
             })
-            
             .log(console.log) // включить логи
             .error(console.error) // на случай нахождения ошибки
             .done(function () {
                 resolve({data: savedData, countPages: countPages, totalCount: totalCount});
-    
             });
     });
 }
 
-let getDataFromPage = function(path, page) {
+const getDataFromPage = async (path, page, inn) => {
     return new Promise((resolve) => {
         let savedData = [];
         let i = (page - 1) * 50 + 1;
@@ -67,6 +67,7 @@ let getDataFromPage = function(path, page) {
                 status: '.registry-entry__header-mid__title',
                 object: '.registry-entry__body-value',
                 owner: '.registry-entry__body-href a',
+                ownerLink: '.registry-entry__body-href a @href',
                 price: '.price-block__value',
                 dateStart: '.data-block > .row .col-6:first-child .data-block__value',
                 dateUpdate: '.data-block > .row .col-6:last-child .data-block__value',
@@ -74,6 +75,7 @@ let getDataFromPage = function(path, page) {
             })
             .data(function (data) {
                 data.id = i++;
+                data.inn = inn;
                 savedData.push(data);
             })
             .log(console.log) // включить логи
@@ -84,42 +86,57 @@ let getDataFromPage = function(path, page) {
     });
 }
 
-getFirstPageData(link)
-    .then((data) => {
+const getData = async (inn) => {
+    const link = `https://zakupki.gov.ru/epz/order/extendedsearch/results.html?searchString=${inn}&morphology=on&recordsPerPage=50&af=on`;
 
-        return new Promise(resolve => {
-            let orders = [...data.data];
+    return getFirstPageData(link, inn)
+        .then((data) => {
+            console.log(data.totalCount);
+            return new Promise(resolve => {
+                let orders = [...data.data];
 
-            if (data.countPages > 1) {
-                let requests = [];
-            
-                for (let i = 2; i <= data.countPages; i++) {
-                    requests.push(getDataFromPage(link, i));
-                }
-            
-                Promise.all(requests).then(responses => {
-            
-                    responses.map(response => {
-                        orders = [...orders, ...response]
+                if (data.countPages > 1) {
+                    let requests = [];
+                    for (let i = 2; i <= data.countPages; i++) {
+                        requests.push(getDataFromPage(link, i, inn));
+                    }            
+                    Promise.all(requests).then(responses => {
+                        responses.map(response => {
+                            orders = [...orders, ...response]
+                        })
+                        resolve(orders);       
                     })
+                } else {
                     resolve(orders);
-                   
-                   
-                    
-                })
-            } else {
-                resolve(orders);
-            }
+                } 
+            });
+        })
+        .then(data => {
             
-        });
+            console.log('Количество записей: ' + data.length); 
+            return data;       
+        })
+}
 
+
+
+const getAll = async (arrInn) => {
+    let dataInn = [];
+
+    let requests = arrInn.map(inn => {
+        return getData(inn) ;
+    });
+
+    Promise.all(requests).then(responses => {
+        // responses.map(response => {
+        //     dataInn = [...dataInn, ...response]
+        // })
+        fs.writeFile('data.json', JSON.stringify(responses, null, 4), function (err) {
+                if (err) console.error(err);
+                else console.log('Data Saved to data.json file');
+            });  
+        // return responses;
     })
-    .then(data => {
-        // fs.writeFile('data.json', JSON.stringify(orders, null, 4), function (err) {
-        //     if (err) console.error(err);
-        //     else console.log('Data Saved to data.json file');
-        // });
-        console.log(data);
-        console.log('Количество записей: ' + data.length);
-        console.log(data.totalCount);
-    })
+}
+
+getAll([inn, inn2]);
