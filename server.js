@@ -1,9 +1,46 @@
+const express = require('express');
+const cors = require('cors');
+const port = 3002;
+const app = express();
+
 const osmosis = require('osmosis');
 
-let inn = 3808229774;
-let inn2 = 1435193127;
+app.use(cors());
+app.use(express.json());
+app.get('/', (request, response) => {
+    console.log(`URL: ${request.url}`);
+    response.send('Hello, Server!');
+});
 
-const fs = require('fs');
+app.post('/', (req, res) => {
+    const { innList } = req.body;
+    console.log(
+        'innList: ',
+        innList.split(',').map((item) => item.trim()),
+    );
+
+    let innListAr = innList.split(',').map((item) => item.trim());
+
+    // async () => {
+    //     let orders =  await getAll(innListAr);
+    // }
+
+    getAll(innListAr).then((data) => res.send(data));
+
+    // const { innList } = request.body;
+});
+
+app.get('/test', (request, response) => {
+    console.log(`URL: ${request.url}`);
+
+    response.send('Hello, Test!');
+});
+
+const server = app.listen(port, (error) => {
+    if (error) return console.log(`Error: ${error}`);
+
+    console.log(`Server listening on port ${server.address().port}`);
+});
 
 const getFirstPageData = async (path, inn) => {
     return new Promise((resolve) => {
@@ -121,16 +158,15 @@ const getAll = async (arrInn) => {
         return getData(inn);
     });
 
-    Promise.all(requests).then((responses) => {
+    return Promise.all(requests).then((responses) => {
         // responses.map(response => {
         //     dataInn = [...dataInn, ...response]
         // })
-        fs.writeFile('data.json', JSON.stringify(responses, null, 4), function (err) {
-            if (err) console.error(err);
-            else console.log('Data Saved to data.json file');
-        });
+        // fs.writeFile('data.json', JSON.stringify(responses, null, 4), function (err) {
+        //     if (err) console.error(err);
+        //     else console.log('Data Saved to data.json file');
+        // });
+        // console.log(responses);
         return responses;
     });
 };
-
-// getAll([inn, inn2]);

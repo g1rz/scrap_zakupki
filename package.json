@@ -6,13 +6,17 @@
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
         "start": "node index.js",
-        "start2": "node grab.js"
+        "start2": "node grab.js",
+        "server": "nodemon server.js"
     },
     "author": "g1rz",
     "license": "ISC",
     "dependencies": {
         "cheerio": "^1.0.0-rc.5",
+        "cors": "^2.8.5",
+        "express": "^4.17.1",
         "nightmare": "^3.0.2",
+        "nodemon": "^2.0.7",
         "osmosis": "^1.1.10",
         "request": "^2.88.2"
     }
