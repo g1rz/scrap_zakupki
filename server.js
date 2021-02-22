@@ -44,7 +44,9 @@ const server = app.listen(port, (error) => {
 
 const getFirstPageData = async (path, inn) => {
     return new Promise((resolve) => {
-        let savedData = [];
+        let savedData = {
+            orders: [],
+        };
         let countPages = 0;
         let totalCount = '';
         let i = 1;
@@ -57,8 +59,7 @@ const getFirstPageData = async (path, inn) => {
                 link: '.registry-entry__header-mid__number a @href',
                 status: '.registry-entry__header-mid__title',
                 object: '.registry-entry__body-value',
-                owner: '.registry-entry__body-href a',
-                ownerLink: '.registry-entry__body-href a @href',
+
                 price: '.price-block__value',
                 dateStart: '.data-block > .row .col-6:first-child .data-block__value',
                 dateUpdate: '.data-block > .row .col-6:last-child .data-block__value',
@@ -66,8 +67,17 @@ const getFirstPageData = async (path, inn) => {
             })
             .data(function (data) {
                 data.id = i++;
-                data.inn = inn;
-                savedData.push(data);
+                savedData.orders.push(data);
+            })
+            .find('.search-registry-entry-block:first-child')
+            .set({
+                owner: '.registry-entry__body-href a',
+                ownerLink: '.registry-entry__body-href a @href',
+            })
+            .data(function (data) {
+                savedData.inn = inn;
+                savedData.owner = data.owner;
+                savedData.ownerLink = data.ownerLink;
             })
             .find('.content-search-registry-block')
             .set({
@@ -100,8 +110,8 @@ const getDataFromPage = async (path, page, inn) => {
                 link: '.registry-entry__header-mid__number a @href',
                 status: '.registry-entry__header-mid__title',
                 object: '.registry-entry__body-value',
-                owner: '.registry-entry__body-href a',
-                ownerLink: '.registry-entry__body-href a @href',
+                // owner: '.registry-entry__body-href a',
+                // ownerLink: '.registry-entry__body-href a @href',
                 price: '.price-block__value',
                 dateStart: '.data-block > .row .col-6:first-child .data-block__value',
                 dateUpdate: '.data-block > .row .col-6:last-child .data-block__value',
@@ -109,7 +119,7 @@ const getDataFromPage = async (path, page, inn) => {
             })
             .data(function (data) {
                 data.id = i++;
-                data.inn = inn;
+                // data.inn = inn;
                 savedData.push(data);
             })
             .log(console.log) // включить логи
@@ -127,21 +137,21 @@ const getData = async (inn) => {
         .then((data) => {
             console.log(data.totalCount);
             return new Promise((resolve) => {
-                let orders = [...data.data];
+                let savedData = data.data; //[...data.data];
 
                 if (data.countPages > 1) {
                     let requests = [];
-                    for (let i = 2; i <= data.countPages; i++) {
+                    for (let i = 2; i <= savedData.countPages; i++) {
                         requests.push(getDataFromPage(link, i, inn));
                     }
                     Promise.all(requests).then((responses) => {
                         responses.map((response) => {
-                            orders = [...orders, ...response];
+                            savedData.orders = [...savedData.orders, ...response];
                         });
-                        resolve(orders);
+                        resolve(savedData);
                     });
                 } else {
-                    resolve(orders);
+                    resolve(savedData);
                 }
             });
         })
