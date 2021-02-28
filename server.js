@@ -67,6 +67,7 @@ const getFirstPageData = async (path, inn) => {
             })
             .data(function (data) {
                 data.id = i++;
+                // data.price = formatNum(data.price.replace(/\s/g, ''));
                 savedData.orders.push(data);
             })
             .find('.search-registry-entry-block:first-child')
@@ -120,6 +121,7 @@ const getDataFromPage = async (path, page, inn) => {
             .data(function (data) {
                 data.id = i++;
                 // data.inn = inn;
+                // data.price = formatNum(data.price.replace(/\s/g, ''));
                 savedData.push(data);
             })
             .log(console.log) // включить логи
@@ -180,3 +182,17 @@ const getAll = async (arrInn) => {
         return responses;
     });
 };
+
+
+function formatNum(num) {
+    var reverseArr = String(num).split('').reverse();
+    var result = '';
+
+    for (var i = 0; i <= reverseArr.length; i+=3) {
+        var trippleArr = reverseArr.slice(i, i + 3);
+        result += trippleArr.join('') + ' ';
+    }
+
+    
+    return result.split('').reverse().join('').trim();
+}
